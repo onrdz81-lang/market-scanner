@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050505">
+  <title>Market Scanner HUD</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root{--bg:#050505;--panel:rgba(12,12,12,.84);--line:#353535;--muted:#9a9a9a;--text:#f2f2f2;--accent:#ff3131;--good:#f4f4f4;--bad:#ff3131}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Rajdhani,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.background-grid{position:fixed;inset:0;z-index:-3;opacity:.14;background-image:linear-gradient(#555 1px,transparent 1px),linear-gradient(90deg,#555 1px,transparent 1px);background-size:50px 50px;transform:perspective(700px) rotateX(55deg) translateY(-5%);transform-origin:top;animation:gridMove 16s linear infinite}
+@keyframes gridMove{to{background-position:0 50px,50px 0}}
+.radar{position:fixed;border:1px solid rgba(255,255,255,.07);border-radius:50%;z-index:-2}.radar-one{width:650px;height:650px;right:-200px;top:100px;animation:spin 35s linear infinite}.radar-two{width:300px;height:300px;left:-100px;bottom:40px;animation:spin 20s linear reverse infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.app-shell{width:min(1400px,94%);margin:auto;padding:28px 0 70px}.hud-panel{background:var(--panel);border:1px solid var(--line);position:relative;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));box-shadow:0 0 24px rgba(255,255,255,.025)}.hud-panel:before{content:"";position:absolute;width:18px;height:18px;right:8px;bottom:8px;border-right:1px solid var(--accent);border-bottom:1px solid var(--accent);opacity:.7}
+.topbar{padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px}.eyebrow,.section-heading span{font-family:Orbitron,sans-serif;font-size:.68rem;color:#888;letter-spacing:2px}h1,h2{font-family:Orbitron,sans-serif;margin:5px 0 0;letter-spacing:2px}h1{font-size:clamp(1.4rem,4vw,2.4rem)}h1 span{color:var(--accent)}h2{font-size:1.1rem}.status-pill{font-family:Orbitron;font-size:.7rem;border:1px solid #444;padding:11px 14px;letter-spacing:1px}.status-pill b{color:var(--accent)}
+.status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.status-card{padding:15px 18px}.status-card span{display:block;color:#888;font-size:.75rem;letter-spacing:1px}.status-card strong{font-family:Orbitron;font-size:.85rem;margin-top:7px;display:block}
+.toolbar{padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:28px;flex-wrap:wrap}.section-title{font-family:Orbitron;font-size:.72rem;letter-spacing:1px;white-space:nowrap}.section-title span{color:var(--accent);margin-right:8px}.inline-form{display:flex;gap:8px;flex:1;min-width:220px}input,select{background:#090909;border:1px solid #3b3b3b;color:#eee;padding:10px 12px;outline:none;width:100%}input:focus,select:focus{border-color:#aaa}button{border:1px solid #555;background:#111;color:#eee;padding:10px 14px;letter-spacing:.5px}.inline-form button,.primary-btn{background:var(--accent);border-color:var(--accent);color:white;font-weight:700}.ghost-btn{font-family:Orbitron;font-size:.65rem}.section-heading{display:flex;justify-content:space-between;align-items:end;margin:0 0 14px}.section-heading small{color:#888;max-width:420px;text-align:right}
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.stock-card{min-height:230px;padding:18px;overflow:hidden}.stock-card.flash{animation:flash .8s ease}@keyframes flash{50%{box-shadow:0 0 35px rgba(255,49,49,.3)}}.stock-top{display:flex;justify-content:space-between;align-items:start}.symbol{font-family:Orbitron;font-size:1.45rem}.remove-btn{background:transparent;border:0;color:#888;font-size:1.1rem;padding:0}.price{font-family:Orbitron;font-size:1.9rem;margin:26px 0 5px}.change{font-size:1rem;font-weight:700}.change.up{color:#eee}.change.down{color:var(--accent)}.mini-chart{height:54px;margin:18px 0;background:linear-gradient(180deg,transparent 49%,rgba(255,255,255,.08) 50%,transparent 51%);position:relative;overflow:hidden}.mini-chart svg{width:100%;height:100%}.card-footer{display:flex;justify-content:space-between;color:#777;font-size:.78rem}.skeleton{color:#777;font-size:.9rem;padding-top:55px}
+.scanner-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}.scanner-panel,.alert-panel{padding:18px;min-height:260px}.scanner-body{display:flex;align-items:center;justify-content:center;gap:35px;height:200px}.scanner-rings{width:150px;height:150px;border:1px solid #555;border-radius:50%;position:relative;background:repeating-radial-gradient(circle,transparent 0 23px,rgba(255,255,255,.08) 24px 25px)}.scanner-line{position:absolute;width:50%;height:1px;background:linear-gradient(90deg,var(--accent),transparent);left:50%;top:50%;transform-origin:left;animation:spin 3s linear infinite}.scanner-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;position:absolute;left:25%;top:35%;box-shadow:0 0 15px var(--accent)}.scan-label{color:#777;font-size:.75rem;letter-spacing:2px}.scanner-copy strong{font-family:Orbitron;font-size:1rem}.scanner-copy p{color:#888;max-width:220px}.panel-head,.panel-top{display:flex;justify-content:space-between;align-items:start}.tiny-btn{padding:6px 9px;font-size:.7rem}.alert-list{margin-top:14px;display:grid;gap:8px}.alert-item{border:1px solid #292929;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}.alert-item strong{font-family:Orbitron;font-size:.75rem}.alert-item span{color:#999;font-size:.8rem}.alert-actions button{padding:4px 7px;font-size:.7rem}.disclaimer{margin-top:25px;border:1px solid rgba(255,49,49,.5);padding:12px;color:#bbb;font-size:.78rem;letter-spacing:.5px;text-align:center}
+.side-panel{position:fixed;right:0;top:0;height:100dvh;width:min(440px,100%);background:#080808;border-left:1px solid #444;padding:26px;z-index:20;transform:translateX(105%);transition:.3s;overflow:auto}.side-panel.open{transform:translateX(0)}.close-btn{font-size:1.7rem;background:transparent;border:0;padding:0 8px}.form-group{margin:20px 0}.form-group label{display:block;font-family:Orbitron;font-size:.68rem;color:#aaa;margin-bottom:8px;letter-spacing:1px}.toggle-row{display:flex;justify-content:space-between;align-items:center}.toggle-row label{margin:0}.toggle-row input{width:auto}.security-note{font-size:.8rem;color:#777;line-height:1.4}.primary-btn{width:100%;padding:13px;font-family:Orbitron;font-size:.72rem}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:grid;place-items:center;padding:20px;z-index:30}.modal-card{width:min(460px,100%);padding:24px}.toast-container{position:fixed;right:18px;bottom:18px;z-index:50;display:grid;gap:8px}.toast{background:#111;border:1px solid #555;padding:13px 16px;max-width:330px;box-shadow:0 10px 30px #000}.toast.error{border-color:var(--accent)}.empty-state{padding:45px;border:1px dashed #444;color:#777;text-align:center}
+.boot-screen{position:fixed;inset:0;background:#050505;z-index:100;display:grid;place-items:center;transition:opacity .6s;overflow:hidden}.boot-screen.hide{opacity:0;pointer-events:none}.boot-text{font-family:Orbitron;font-size:clamp(.7rem,2vw,1rem);letter-spacing:2px;z-index:2}.boot-text p{opacity:0;animation:bootText .8s forwards}.boot-text p:nth-child(1){animation-delay:.2s}.boot-text p:nth-child(2){animation-delay:.9s}.boot-text p:nth-child(3){animation-delay:1.6s;color:var(--accent)}@keyframes bootText{to{opacity:1}}.boot-radar{position:absolute;width:340px;height:340px;border:1px solid #333;border-radius:50%;opacity:.5}.boot-radar:after{content:"";position:absolute;width:50%;height:1px;background:var(--accent);left:50%;top:50%;transform-origin:left;animation:spin 1.5s linear infinite}
+@media(max-width:800px){.app-shell{width:92%}.status-grid{grid-template-columns:1fr 1fr}.scanner-layout{grid-template-columns:1fr}.scanner-body{gap:15px}.section-heading{align-items:start;flex-direction:column;gap:8px}.section-heading small{text-align:left}.topbar{align-items:start;flex-direction:column}.stock-grid{grid-template-columns:1fr}.toolbar{align-items:stretch}.inline-form{flex:initial;width:100%}.inline-form input{min-width:0}.ghost-btn{flex:1}.status-card{min-height:72px}}
+</style>
+</head>
+<body>
+  <div id="bootScreen" class="boot-screen">
+    <div class="boot-radar"></div>
+    <div class="boot-text">
+      <p>MARKET SCANNER INITIALIZING...</p>
+      <p>DATA LINK CHECK...</p>
+      <p>HUD SYSTEM ONLINE</p>
+    </div>
+  </div>
+
+  <div class="background-grid"></div>
+  <div class="radar radar-one"></div>
+  <div class="radar radar-two"></div>
+
+  <main class="app-shell" id="app">
+    <header class="topbar hud-panel">
+      <div>
+        <div class="eyebrow">REAL-TIME MARKET MONITOR</div>
+        <h1>MARKET <span>SCANNER</span></h1>
+      </div>
+      <div class="status-pill" id="systemStatus">SYSTEM STATUS: <b>STANDBY</b></div>
+    </header>
+
+    <section class="status-grid">
+      <div class="hud-panel status-card">
+        <span>DATA CONNECTION</span>
+        <strong id="connectionStatus">WAITING FOR API KEY</strong>
+      </div>
+      <div class="hud-panel status-card">
+        <span>LAST UPDATE</span>
+        <strong id="lastUpdate">--:--:--</strong>
+      </div>
+      <div class="hud-panel status-card">
+        <span>NEXT SCAN</span>
+        <strong id="nextScan">--:--</strong>
+      </div>
+      <div class="hud-panel status-card">
+        <span>WATCHLIST</span>
+        <strong id="watchlistCount">0 SYMBOLS</strong>
+      </div>
+    </section>
+
+    <section class="toolbar hud-panel">
+      <div class="section-title"><span>01</span> WATCHLIST CONTROL</div>
+      <form id="addSymbolForm" class="inline-form">
+        <input id="symbolInput" maxlength="15" placeholder="Örn: AAPL" autocomplete="off">
+        <button type="submit">+ ADD SYMBOL</button>
+      </form>
+      <button id="refreshBtn" class="ghost-btn">↻ SCAN NOW</button>
+      <button id="settingsBtn" class="ghost-btn">⚙ SETTINGS</button>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div><span>02 / MARKET OVERVIEW</span><h2>WATCHLIST</h2></div>
+        <small id="marketMessage">API anahtarı girildiğinde piyasa verileri taranacaktır.</small>
+      </div>
+      <div id="stockGrid" class="stock-grid"></div>
+      <div id="emptyState" class="empty-state hidden">İzleme listesi boş. Yukarıdan sembol ekleyin.</div>
+    </section>
+
+    <section class="scanner-layout">
+      <div class="hud-panel scanner-panel">
+        <div class="section-title"><span>03</span> MARKET SCANNER</div>
+        <div class="scanner-body">
+          <div class="scanner-rings"><div class="scanner-line"></div><div class="scanner-dot"></div></div>
+          <div class="scanner-copy">
+            <div class="scan-label">SCAN STATUS</div>
+            <strong id="scanState">STANDBY</strong>
+            <p id="scanDescription">API bağlantısı bekleniyor.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-panel alert-panel">
+        <div class="panel-head">
+          <div class="section-title"><span>04</span> ALERT CENTER</div>
+          <button id="newAlertBtn" class="tiny-btn">+ NEW ALERT</button>
+        </div>
+        <div id="alertList" class="alert-list"></div>
+      </div>
+    </section>
+
+    <section class="disclaimer">
+      ⚠ BU BİR YATIRIM TAVSİYESİ DEĞİLDİR. VERİLER GECİKMELİ, EKSİK VEYA HATALI OLABİLİR.
+    </section>
+  </main>
+
+  <aside id="settingsPanel" class="side-panel">
+    <div class="panel-top">
+      <div><span class="eyebrow">05 / CONFIGURATION</span><h2>API SETTINGS</h2></div>
+      <button class="close-btn" data-close="settingsPanel">×</button>
+    </div>
+
+    <div class="form-group">
+      <label>PRIMARY PROVIDER</label>
+      <select id="providerSelect">
+        <option value="finnhub">Finnhub (Primary)</option>
+        <option value="alphavantage">Alpha Vantage (Primary)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>FINNHUB API KEY</label>
+      <input type="password" id="finnhubKey" placeholder="Finnhub anahtarınızı girin">
+    </div>
+
+    <div class="form-group">
+      <label>ALPHA VANTAGE API KEY</label>
+      <input type="password" id="alphaKey" placeholder="Alpha Vantage anahtarınızı girin">
+    </div>
+
+    <div class="form-group">
+      <label>REFRESH INTERVAL</label>
+      <select id="refreshInterval">
+        <option value="30">30 saniye</option>
+        <option value="60">60 saniye</option>
+        <option value="120">120 saniye</option>
+        <option value="300">5 dakika</option>
+      </select>
+    </div>
+
+    <div class="form-group toggle-row">
+      <label>VOICE ALERTS</label>
+      <input type="checkbox" id="voiceEnabled">
+    </div>
+
+    <div class="form-group">
+      <label>VOICE SPEED: <span id="voiceRateValue">1.0</span></label>
+      <input type="range" id="voiceRate" min="0.6" max="1.4" value="1" step="0.1">
+    </div>
+
+    <div class="form-group toggle-row">
+      <label>BROWSER NOTIFICATIONS</label>
+      <input type="checkbox" id="notificationsEnabled">
+    </div>
+
+    <p class="security-note">API anahtarları yalnızca bu tarayıcının LocalStorage alanında saklanır. Ortak bilgisayarlarda anahtar saklamanız önerilmez.</p>
+    <button id="saveSettingsBtn" class="primary-btn">SAVE SETTINGS</button>
+  </aside>
+
+  <div id="alertModal" class="modal hidden">
+    <div class="modal-card hud-panel">
+      <div class="panel-top">
+        <div><span class="eyebrow">ALERT CONFIGURATION</span><h2 id="alertModalTitle">NEW ALERT</h2></div>
+        <button class="close-btn" data-close="alertModal">×</button>
+      </div>
+      <form id="alertForm">
+        <input type="hidden" id="alertId">
+        <div class="form-group">
+          <label>SYMBOL</label>
+          <select id="alertSymbol"></select>
+        </div>
+        <div class="form-group">
+          <label>ALERT TYPE</label>
+          <select id="alertType">
+            <option value="price_above">Fiyat seviyesinin üstüne çıkınca</option>
+            <option value="price_below">Fiyat seviyesinin altına inince</option>
+            <option value="percent_up">% değişim yukarı eşiği</option>
+            <option value="percent_down">% değişim aşağı eşiği</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>THRESHOLD</label>
+          <input type="number" id="alertValue" step="0.01" required placeholder="Örn: 250 veya 3">
+        </div>
+        <button class="primary-btn" type="submit">SAVE ALERT</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script>
+(() => {
+  const DEFAULT_SYMBOLS = ["AAPL","MSFT","TSLA","NVDA"];
+  const STORAGE = "marketScannerHUD_v1";
+  let state = {
+    watchlist: [...DEFAULT_SYMBOLS],
+    alerts: [],
+    settings: {
+      provider: "finnhub", finnhubKey: "", alphaKey: "",
+      interval: 30, voice: true, voiceRate: 1,
+      notifications: false
+    },
+    prices: {}, lastUpdate: null
+  };
+  let refreshTimer = null, countdownTimer = null, secondsLeft = 0;
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE));
+      if (saved) state = {
+        ...state, ...saved,
+        watchlist: Array.isArray(saved.watchlist) && saved.watchlist.length ? saved.watchlist : [...DEFAULT_SYMBOLS],
+        settings: {...state.settings, ...(saved.settings || {})},
+        alerts: saved.alerts || []
+      };
+    } catch (_) {}
+  }
+  function save() {
+    localStorage.setItem(STORAGE, JSON.stringify({
+      watchlist: state.watchlist, alerts: state.alerts, settings: state.settings
+    }));
+  }
+
+  function toast(message, type="") {
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.textContent = message;
+    $("toastContainer").appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+
+  function updateStatus() {
+    $("watchlistCount").textContent = `${state.watchlist.length} SYMBOLS`;
+    $("lastUpdate").textContent = state.lastUpdate ? state.lastUpdate.toLocaleTimeString("tr-TR") : "--:--:--";
+    const hasKey = state.settings.finnhubKey || state.settings.alphaKey;
+    $("connectionStatus").textContent = hasKey ? "CONFIGURED" : "WAITING FOR API KEY";
+    $("systemStatus").innerHTML = `SYSTEM STATUS: <b>${hasKey ? "ONLINE" : "STANDBY"}</b>`;
+    $("nextScan").textContent = hasKey ? `${String(Math.floor(secondsLeft/60)).padStart(2,"0")}:${String(secondsLeft%60).padStart(2,"0")}` : "--:--";
+  }
+
+  function renderCards() {
+    const grid = $("stockGrid");
+    $("emptyState").classList.toggle("hidden", state.watchlist.length > 0);
+    grid.innerHTML = state.watchlist.map(symbol => {
+      const q = state.prices[symbol];
+      if (!q) return `<article class="stock-card hud-panel" id="card-${esc(symbol)}">
+        <div class="stock-top"><strong class="symbol">${esc(symbol)}</strong><button class="remove-btn" data-remove="${esc(symbol)}">×</button></div>
+        <div class="skeleton">${(state.settings.finnhubKey || state.settings.alphaKey) ? "VERİ TARAMASI BEKLENİYOR..." : "API KEY REQUIRED"}</div>
+      </article>`;
+      const down = q.change < 0 || q.percent < 0;
+      const cls = down ? "down" : "up";
+      const arrow = down ? "▼" : "▲";
+      const points = miniPoints(q.price, q.change);
+      return `<article class="stock-card hud-panel" id="card-${esc(symbol)}">
+        <div class="stock-top"><strong class="symbol">${esc(symbol)}</strong><button class="remove-btn" data-remove="${esc(symbol)}" title="Sil">×</button></div>
+        <div class="price">${formatPrice(q.price)}</div>
+        <div class="change ${cls}">${arrow} ${formatSigned(q.change)} (${formatSigned(q.percent)}%)</div>
+        <div class="mini-chart"><svg viewBox="0 0 100 30" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="${down ? "#ff3131" : "#f2f2f2"}" stroke-width="1.2"/></svg></div>
+        <div class="card-footer"><span>LAST UPDATE</span><span>${new Date(q.time).toLocaleTimeString("tr-TR")}</span></div>
+      </article>`;
+    }).join("");
+  }
+
+  function miniPoints(price, change) {
+    const trend = change >= 0 ? 1 : -1;
+    return Array.from({length:10}, (_,i) => `${i*11},${15 + Math.sin(i*1.7 + price)*4 - trend*i*.65}`).join(" ");
+  }
+  function formatPrice(n) {
+    return Number(n).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2});
+  }
+  function formatSigned(n) {
+    const v = Number(n || 0);
+    return `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
+  }
+
+  async function fetchFinnhub(symbol) {
+    const key = state.settings.finnhubKey;
+    if (!key) throw new Error("Finnhub API anahtarı girilmemiş.");
+    const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${encodeURIComponent(key)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status === 429 ? "Veri sağlayıcısının çağrı limiti doldu." : "Finnhub bağlantısı kurulamadı.");
+    const d = await res.json();
+    if (!d || typeof d.c !== "number" || d.c === 0) throw new Error(`${symbol} için geçerli veri bulunamadı.`);
+    return {price:d.c, change:d.d ?? 0, percent:d.dp ?? 0, time:(d.t ? d.t*1000 : Date.now()), provider:"Finnhub"};
+  }
+
+  async function fetchAlpha(symbol) {
+    const key = state.settings.alphaKey;
+    if (!key) throw new Error("Alpha Vantage API anahtarı girilmemiş.");
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(key)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Alpha Vantage bağlantısı kurulamadı.");
+    const d = await res.json();
+    if (d.Note) throw new Error("Veri sağlayıcısının çağrı limiti doldu. Birkaç dakika sonra tekrar denenecek.");
+    if (d["Error Message"]) throw new Error(`${symbol} sembolü bulunamadı veya geçersiz.`);
+    const q = d["Global Quote"];
+    if (!q || !q["05. price"]) throw new Error(`${symbol} için veri alınamadı.`);
+    return {
+      price:Number(q["05. price"]), change:Number(q["09. change"] || 0),
+      percent:Number(String(q["10. change percent"] || "0").replace("%","")),
+      time:Date.now(), provider:"Alpha Vantage"
+    };
+  }
+
+  async function getQuote(symbol) {
+    const preferred = state.settings.provider === "alphavantage" ? fetchAlpha : fetchFinnhub;
+    const fallback = state.settings.provider === "alphavantage" ? fetchFinnhub : fetchAlpha;
+    try { return await preferred(symbol); }
+    catch (firstError) {
+      const fallbackKey = fallback === fetchFinnhub ? state.settings.finnhubKey : state.settings.alphaKey;
+      if (fallbackKey) {
+        try { toast(`${symbol}: Ana kaynak başarısız, yedek kaynak deneniyor.`); return await fallback(symbol); }
+        catch (_) {}
+      }
+      throw firstError;
+    }
+  }
+
+  async function scan() {
+    if (!(state.settings.finnhubKey || state.settings.alphaKey)) {
+      $("scanState").textContent = "API KEY REQUIRED";
+      $("scanDescription").textContent = "API SETTINGS bölümünden en az bir API anahtarı girin.";
+      renderCards(); updateStatus(); return;
+    }
+    if (!navigator.onLine) {
+      toast("İnternet bağlantısı görünmüyor.", "error");
+      $("scanState").textContent = "OFFLINE"; return;
+    }
+    $("scanState").textContent = "SCANNING...";
+    $("scanDescription").textContent = `${state.watchlist.length} sembol kontrollü şekilde taranıyor...`;
+    $("marketMessage").textContent = "Veriler güncelleniyor...";
+    for (const symbol of state.watchlist) {
+      try {
+        const previous = state.prices[symbol];
+        const quote = await getQuote(symbol);
+        state.prices[symbol] = quote;
+        if (previous && previous.price !== quote.price) {
+          const card = $("card-"+symbol);
+          if (card) card.classList.add("flash");
+        }
+        checkAlerts(symbol, quote);
+      } catch (e) {
+        console.warn(symbol, e);
+        toast(`${symbol}: ${e.message}`, "error");
+      }
+      await sleep(350);
+    }
+    state.lastUpdate = new Date();
+    $("scanState").textContent = "SCAN COMPLETE";
+    $("scanDescription").textContent = "Piyasa taraması tamamlandı. Sonraki otomatik tarama bekleniyor.";
+    $("marketMessage").textContent = "Son tarama tamamlandı.";
+    renderCards(); updateStatus();
+  }
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+  function checkAlerts(symbol, q) {
+    let changed = false;
+    state.alerts.forEach(alert => {
+      if (alert.symbol !== symbol || alert.triggered) return;
+      let hit=false, msg="";
+      const v=Number(alert.value);
+      if(alert.type==="price_above" && q.price >= v){hit=true;msg=`${symbol} hissesi belirlediğiniz ${v} dolar seviyesinin üzerine çıktı.`}
+      if(alert.type==="price_below" && q.price <= v){hit=true;msg=`${symbol} hissesi belirlediğiniz ${v} dolar seviyesinin altına indi.`}
+      if(alert.type==="percent_up" && q.percent >= v){hit=true;msg=`${symbol} hissesi yüzde ${q.percent.toFixed(2)} yükseldi ve belirlediğiniz eşiği geçti.`}
+      if(alert.type==="percent_down" && q.percent <= -Math.abs(v)){hit=true;msg=`${symbol} hissesi yüzde ${Math.abs(q.percent).toFixed(2)} düştü ve belirlediğiniz eşiği geçti.`}
+      if(hit){alert.triggered=true;alert.triggeredAt=Date.now();changed=true;fireAlert(msg)}
+    });
+    if(changed){save();renderAlerts();}
+  }
+
+  function fireAlert(message) {
+    toast(message);
+    if(state.settings.voice && "speechSynthesis" in window){
+      const u = new SpeechSynthesisUtterance(message); u.lang="tr-TR"; u.rate=Number(state.settings.voiceRate||1); speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } else if(state.settings.voice) toast("Bu tarayıcı sesli bildirim özelliğini desteklemiyor.", "error");
+    if(state.settings.notifications && "Notification" in window && Notification.permission==="granted"){
+      new Notification("Market Scanner Alert",{body:message});
+    }
+  }
+
+  function renderAlerts() {
+    const list=$("alertList");
+    if(!state.alerts.length){list.innerHTML='<div class="empty-state">Henüz alarm kuralı oluşturulmadı.</div>';return}
+    list.innerHTML=state.alerts.map(a=>{
+      const typeMap={price_above:"FİYAT ↑",price_below:"FİYAT ↓",percent_up:"% ↑",percent_down:"% ↓"};
+      return `<div class="alert-item"><div><strong>${esc(a.symbol)} · ${typeMap[a.type]}</strong><br><span>Eşik: ${esc(a.value)} ${a.type.startsWith("percent")?"%":"USD"} ${a.triggered?"· TETİKLENDİ":""}</span></div><div class="alert-actions"><button data-edit-alert="${a.id}">EDIT</button><button data-delete-alert="${a.id}">×</button></div></div>`;
+    }).join("");
+  }
+
+  function populateAlertSymbols(){ $("alertSymbol").innerHTML=state.watchlist.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join(""); }
+
+  function startTimers() {
+    clearInterval(refreshTimer); clearInterval(countdownTimer);
+    secondsLeft = Number(state.settings.interval);
+    updateStatus();
+    refreshTimer = setInterval(() => { scan(); secondsLeft=Number(state.settings.interval); }, Number(state.settings.interval)*1000);
+    countdownTimer = setInterval(()=>{if(secondsLeft>0)secondsLeft--;updateStatus()},1000);
+  }
+
+  function openSettings(){syncSettingsUI();$("settingsPanel").classList.add("open")}
+  function syncSettingsUI(){
+    $("providerSelect").value=state.settings.provider;$("finnhubKey").value=state.settings.finnhubKey;$("alphaKey").value=state.settings.alphaKey;
+    $("refreshInterval").value=state.settings.interval;$("voiceEnabled").checked=state.settings.voice;$("voiceRate").value=state.settings.voiceRate;$("voiceRateValue").textContent=state.settings.voiceRate;$("notificationsEnabled").checked=state.settings.notifications;
+  }
+
+  document.addEventListener("click", async e => {
+    const remove=e.target.dataset.remove;
+    if(remove){state.watchlist=state.watchlist.filter(s=>s!==remove);delete state.prices[remove];state.alerts=state.alerts.filter(a=>a.symbol!==remove);save();renderCards();renderAlerts();updateStatus();return}
+    if(e.target.id==="settingsBtn") openSettings();
+    if(e.target.id==="refreshBtn"){scan();secondsLeft=Number(state.settings.interval)}
+    if(e.target.id==="newAlertBtn"){if(!state.watchlist.length)return toast("Önce izleme listesine sembol ekleyin.","error");populateAlertSymbols();$("alertForm").reset();$("alertId").value="";$("alertModalTitle").textContent="NEW ALERT";$("alertModal").classList.remove("hidden")}
+    if(e.target.dataset.close){$(e.target.dataset.close).classList.remove("hidden");$("settingsPanel").classList.remove("open")}
+    const del=e.target.dataset.deleteAlert;if(del){state.alerts=state.alerts.filter(a=>a.id!==del);save();renderAlerts()}
+    const edit=e.target.dataset.editAlert;if(edit){const a=state.alerts.find(x=>x.id===edit);if(a){populateAlertSymbols();$("alertId").value=a.id;$("alertSymbol").value=a.symbol;$("alertType").value=a.type;$("alertValue").value=a.value;$("alertModalTitle").textContent="EDIT ALERT";$("alertModal").classList.remove("hidden")}}
+  });
+
+  $("addSymbolForm").addEventListener("submit", e=>{
+    e.preventDefault();const symbol=$("symbolInput").value.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"");
+    if(!symbol)return;if(state.watchlist.includes(symbol)){toast("Bu sembol zaten izleme listesinde.","error");return}
+    state.watchlist.push(symbol);$("symbolInput").value="";save();renderCards();renderAlerts();updateStatus();scan();
+  });
+
+  $("saveSettingsBtn").addEventListener("click", async ()=>{
+    state.settings.provider=$("providerSelect").value;state.settings.finnhubKey=$("finnhubKey").value.trim();state.settings.alphaKey=$("alphaKey").value.trim();
+    state.settings.interval=Number($("refreshInterval").value);state.settings.voice=$("voiceEnabled").checked;state.settings.voiceRate=Number($("voiceRate").value);state.settings.notifications=$("notificationsEnabled").checked;
+    if(state.settings.notifications && "Notification" in window && Notification.permission!=="granted"){
+      const permission=await Notification.requestPermission();if(permission!=="granted"){state.settings.notifications=false;toast("Tarayıcı bildirim izni verilmedi.","error")}
+    }
+    save();$("settingsPanel").classList.remove("open");startTimers();renderCards();updateStatus();toast("Ayarlar kaydedildi.");scan();
+  });
+  $("voiceRate").addEventListener("input", e=>$("voiceRateValue").textContent=e.target.value);
+
+  $("alertForm").addEventListener("submit", e=>{
+    e.preventDefault();const id=$("alertId").value;
+    const alert={id:id||crypto.randomUUID(),symbol:$("alertSymbol").value,type:$("alertType").value,value:Number($("alertValue").value),triggered:false};
+    if(id){const old=state.alerts.findIndex(a=>a.id===id);state.alerts[old]=alert}else state.alerts.push(alert);
+    save();renderAlerts();$("alertModal").classList.add("hidden");toast("Alarm kuralı kaydedildi.");
+  });
+
+  window.addEventListener("online",()=>toast("İnternet bağlantısı yeniden kuruldu."));
+  window.addEventListener("offline",()=>toast("İnternet bağlantısı kesildi.","error"));
+
+  load(); renderCards(); renderAlerts(); updateStatus(); startTimers();
+  setTimeout(()=>{$("bootScreen").classList.add("hide");setTimeout(()=>$("bootScreen").remove(),700)},2500);
+  if(state.settings.finnhubKey || state.settings.alphaKey) setTimeout(scan,2800);
+})();
+</script>
+</body>
+</html>
