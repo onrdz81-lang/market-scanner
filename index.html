@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market Scanner HUD</title>
+<style>
+:root{--bg:#050505;--p:#101010;--l:#555;--t:#f2f2f2;--m:#999;--r:#ff3b30;--g:#75d38a}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font-family:ui-monospace,monospace}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background:linear-gradient(#fff1 1px,transparent 1px),linear-gradient(90deg,#fff1 1px,transparent 1px);background-size:30px 30px}
+main{max-width:1200px;margin:auto;padding:14px;position:relative}header,section{background:#0b0b0bf0;border:1px solid var(--l);padding:16px;margin-bottom:14px}
+h1{margin:0;font-size:clamp(26px,6vw,52px);letter-spacing:5px}.sub{color:var(--m);font-size:12px}.status,.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.badge{border:1px solid var(--l);padding:8px;font-size:11px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.card{border:1px solid var(--l);background:linear-gradient(135deg,#111,#070707);padding:14px;position:relative}.symbol{font-size:22px;font-weight:bold}.price{font-size:25px;margin:14px 0 7px}.up{color:var(--g)}.down{color:var(--r)}.neutral{color:var(--m)}
+.meta{font-size:10px;color:var(--m);margin-top:14px}.spark{height:25px;display:flex;align-items:end;gap:3px;margin-top:10px}.spark i{width:9%;background:#777}
+input,select,button{background:#080808;color:#eee;border:1px solid #555;padding:11px;font:inherit}button{cursor:pointer}.primary{border-color:var(--r)}.remove{float:right;font-size:10px;padding:5px}
+.alert{border-top:1px solid #333;padding:9px 0;font-size:12px}.note{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #777;padding:12px;display:none;z-index:9}
+footer{position:sticky;bottom:0;background:#210909;border:1px solid var(--r);padding:11px;text-align:center;font-size:12px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style></head><body><main>
+<header><h1>MARKET SCANNER</h1><div class="sub">SCI-FI MARKET MONITORING HUD</div><div class="status">
+<span class="badge" id="sys">SYSTEM STATUS: STANDBY</span><span class="badge" id="api">DATA CONNECTION: API KEY REQUIRED</span><span class="badge" id="last">LAST UPDATE: --</span><span class="badge" id="next">NEXT SCAN: --</span></div></header>
+<div class="grid">
+<section><b>01 / WATCHLIST</b><div class="controls"><input id="symbol" placeholder="Örn: AMZN"><button class="primary" id="add">HİSSE EKLE</button><button id="scan">ŞİMDİ TARA</button></div></section>
+<section><b>02 / SETTINGS</b><div class="controls"><label class="badge">Yenileme <select id="interval"><option value="30">30 sn</option><option value="60">60 sn</option><option value="120">120 sn</option></select></label><label class="badge"><input type="checkbox" id="voice"> Sesli</label><label class="badge"><input type="checkbox" id="notify"> Bildirim</label></div></section>
+<section class="full"><b>03 / MARKET OVERVIEW</b><div class="cards" id="cards"></div></section>
+<section><b>04 / ALERT CENTER</b><div class="controls"><select id="asym"></select><select id="atype"><option value="above">Fiyat üstü</option><option value="below">Fiyat altı</option><option value="up">% yükseliş</option><option value="down">% düşüş</option></select><input id="aval" type="number" step=".01" placeholder="Değer"><button class="primary" id="aadd">ALERT EKLE</button></div><div id="alist"></div></section>
+<section><b>05 / API SETTINGS</b><p class="sub">API anahtarları yalnızca bu tarayıcının LocalStorage alanında saklanır.</p><input id="fkey" placeholder="Finnhub API anahtarı" style="width:100%;margin-bottom:8px"><input id="akey" placeholder="Alpha Vantage API anahtarı (yedek)" style="width:100%;margin-bottom:8px"><div class="controls"><button class="primary" id="save">AYARLARI KAYDET</button><button id="clear">ANAHTARLARI SİL</button></div><p class="sub" id="err"></p></section>
+</div><footer>⚠ Bu bir yatırım tavsiyesi değildir. Veriler gecikmeli veya hatalı olabilir.</footer></main><div class="note" id="note"></div>
+<script>
+const $=x=>document.getElementById(x),D=['AAPL','MSFT','TSLA','NVDA'];
+let S={w:JSON.parse(localStorage.ms_w||'null')||D,a:JSON.parse(localStorage.ms_a||'[]'),set:JSON.parse(localStorage.ms_s||'{}'),p:{},busy:false,t:null,n:30};
+const save=()=>{localStorage.ms_w=JSON.stringify(S.w);localStorage.ms_a=JSON.stringify(S.a);localStorage.ms_s=JSON.stringify(S.set)};
+function msg(x){$('note').textContent=x;$('note').style.display='block';setTimeout(()=>$('note').style.display='none',4000)}
+function render(){let c=$('cards');c.innerHTML='';S.w.forEach(s=>{let d=S.p[s],p=d?.dp||0,cl=p>0?'up':p<0?'down':'neutral';c.innerHTML+=`<div class="card"><div class="symbol">${s}</div><div class="price">${d?'$'+Number(d.c).toFixed(2):'VERİ BEKLİYOR'}</div><div class="${cl}">${p>0?'▲':p<0?'▼':'◆'} ${d?Number(d.d).toFixed(2)+' / '+Number(p).toFixed(2)+'%':'--'}</div><div class="spark">${Array.from({length:10},(_,i)=>'<i style="height:'+(5+Math.random()*20)+'px"></i>').join('')}</div><div class="meta">SON GÜNCELLEME: ${d?new Date().toLocaleTimeString('tr-TR'):'--'}</div><button class="remove" onclick="rm('${s}')">SİL</button></div>`});$('asym').innerHTML=S.w.map(x=>'<option>'+x+'</option>').join('');$('alist').innerHTML=S.a.map((a,i)=>`<div class="alert">${a.s} / ${a.t} / ${a.v} <button onclick="ra(${i})">SİL</button></div>`).join('')||'<p class="sub">Henüz alarm yok.</p>'}
+window.rm=s=>{S.w=S.w.filter(x=>x!=s);save();render()};window.ra=i=>{S.a.splice(i,1);save();render()};
+async function quote(s){let f=S.set.f;if(!f)throw Error('Finnhub API anahtarı gerekli');let r=await fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(s)+'&token='+encodeURIComponent(f));if(!r.ok)throw Error('Veri sağlayıcısına bağlanılamadı');let d=await r.json();if(d.error||d.c===undefined)throw Error(d.error||'Veri alınamadı');return d}
+async function update(){if(S.busy)return;if(!S.set.f){$('api').textContent='DATA CONNECTION: API KEY REQUIRED';render();return}S.busy=true;$('sys').textContent='SYSTEM STATUS: SCANNING';let bad=0;for(let s of S.w){try{S.p[s]=await quote(s)}catch(e){bad++;$('err').textContent=s+': '+e.message}}S.busy=false;$('sys').textContent=bad?'SYSTEM STATUS: DEGRADED':'SYSTEM STATUS: ONLINE';$('api').textContent=bad?'DATA CONNECTION: PARTIAL':'DATA CONNECTION: ACTIVE';$('last').textContent='LAST UPDATE: '+new Date().toLocaleTimeString('tr-TR');render();alerts()}
+function alerts(){for(let a of S.a){let d=S.p[a.s];if(!d||a.hit)continue;let h=(a.t=='above'&&d.c>=a.v)||(a.t=='below'&&d.c<=a.v)||(a.t=='up'&&d.dp>=a.v)||(a.t=='down'&&d.dp<=-Math.abs(a.v));if(h){a.hit=1;save();let text=a.s+' için belirlediğiniz alarm gerçekleşti.';msg(text);if($('voice').checked&&speechSynthesis){let u=new SpeechSynthesisUtterance(text);u.lang='tr-TR';speechSynthesis.speak(u)}if($('notify').checked&&Notification.permission=='granted')new Notification('Market Scanner',{body:text})}}}
+function clock(){clearInterval(S.t);S.n=+$('interval').value;S.t=setInterval(()=>{S.n--;if(S.n<=0){S.n=+$('interval').value;update()}$('next').textContent='NEXT SCAN: 00:'+String(S.n).padStart(2,'0')},1000)}
+$('add').onclick=()=>{let s=$('symbol').value.trim().toUpperCase();if(!/^[A-Z0-9.-]+$/.test(s))return msg('Geçerli sembol girin');if(!S.w.includes(s))S.w.push(s);$('symbol').value='';save();render();update()};
+$('scan').onclick=update;$('aadd').onclick=()=>{let v=+$('aval').value;if(!Number.isFinite(v))return msg('Geçerli değer girin');S.a.push({s:$('asym').value,t:$('atype').value,v,hit:0});$('aval').value='';save();render()};
+$('save').onclick=()=>{S.set.f=$('fkey').value.trim();S.set.a=$('akey').value.trim();save();msg('Ayarlar kaydedildi');update()};
+$('clear').onclick=()=>{S.set={};save();$('fkey').value='';$('akey').value='';msg('Anahtarlar silindi')};
+$('interval').onchange=clock;$('notify').onchange=async e=>{if(e.target.checked&&Notification.permission=='default'){let p=await Notification.requestPermission();if(p!='granted')e.target.checked=false}};
+$('fkey').value=S.set.f||'';$('akey').value=S.set.a||'';$('interval').value=S.set.i||30;render();clock();update();
+</script></body></html>
