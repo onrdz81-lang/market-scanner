@@ -19,101 +19,185 @@ body{
 }
 
 main{
-  max-width:1000px;
+  max-width:1100px;
   margin:auto;
-  padding:20px;
+  padding:30px 20px 80px;
 }
 
 header,
 section{
   border:1px solid #555;
-  padding:25px;
+  background:#101010;
   margin-bottom:25px;
-  background:#0b0b0b;
+  padding:28px;
 }
 
 h1{
   margin:0;
+  font-size:42px;
   letter-spacing:8px;
 }
 
 .subtitle{
   color:#999;
+  letter-spacing:3px;
   margin-top:10px;
-  letter-spacing:2px;
 }
 
 .status{
   display:inline-block;
-  margin-top:20px;
-  padding:12px;
-  border:1px solid #555;
-}
-
-input,
-button,
-select{
-  background:#111;
-  color:white;
-  border:1px solid #666;
+  margin-top:25px;
   padding:15px;
+  border:1px solid #555;
   font-size:16px;
 }
 
+.online{
+  color:#77e58a;
+}
+
+.connection{
+  display:block;
+  margin-top:15px;
+  padding:15px;
+  border:1px solid #555;
+  color:#ccc;
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+input{
+  flex:1;
+  min-width:180px;
+  padding:18px;
+  background:#080808;
+  color:white;
+  border:1px solid #555;
+  font-size:18px;
+  text-transform:uppercase;
+}
+
 button{
+  padding:18px 25px;
+  background:#161616;
+  color:white;
+  border:1px solid #666;
+  font-size:16px;
   cursor:pointer;
 }
 
 button:hover{
-  background:#222;
+  background:#252525;
 }
 
-.grid{
+.add{
+  border-color:#e85b4d;
+}
+
+.refresh{
+  border-color:#4f9cff;
+}
+
+.message{
+  margin-top:18px;
+  color:#aaa;
+  min-height:20px;
+}
+
+.watchlist{
   display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:15px;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:18px;
+  margin-top:25px;
 }
 
 .card{
   border:1px solid #555;
-  padding:25px;
-  margin-top:20px;
-  min-height:180px;
+  background:#121212;
+  padding:22px;
+  position:relative;
+}
+
+.symbol{
+  font-size:24px;
+  font-weight:bold;
+  margin-bottom:20px;
 }
 
 .price{
-  font-size:35px;
-  margin:20px 0;
+  font-size:34px;
+  margin-bottom:12px;
 }
 
-.green{
-  color:#42d67b;
+.positive{
+  color:#66d977;
 }
 
-.red{
-  color:#ff5c5c;
+.negative{
+  color:#ff7777;
 }
 
-.warning{
-  border:1px solid #ff5555;
-  padding:15px;
-  color:#ccc;
-  margin-top:20px;
-}
-
-#loading{
+.neutral{
   color:#aaa;
-  margin-top:15px;
 }
 
-@media(max-width:700px){
-  .grid{
-    grid-template-columns:1fr;
+.updated{
+  color:#888;
+  font-size:13px;
+  margin-top:12px;
+}
+
+.delete{
+  margin-top:18px;
+  width:100%;
+  padding:10px;
+  color:#ff7777;
+  border-color:#733;
+}
+
+.empty{
+  color:#888;
+  padding:20px 0;
+}
+
+.info{
+  margin-top:15px;
+  color:#999;
+  font-size:14px;
+}
+
+footer{
+  color:#777;
+  text-align:center;
+  font-size:13px;
+}
+
+@media(max-width:600px){
+
+  main{
+    padding:20px 12px 60px;
+  }
+
+  header,
+  section{
+    padding:20px;
   }
 
   h1{
-    font-size:28px;
-    letter-spacing:4px;
+    font-size:30px;
+    letter-spacing:5px;
+  }
+
+  .controls{
+    flex-direction:column;
+  }
+
+  button{
+    width:100%;
   }
 }
 </style>
@@ -124,17 +208,19 @@ button:hover{
 <main>
 
 <header>
+
 <h1>MARKET SCANNER</h1>
 
 <div class="subtitle">
 SCI-FI MARKET MONITORING HUD
 </div>
 
-<div class="status" id="status">
-SYSTEM STATUS: READY
+<div class="status">
+SYSTEM STATUS:
+<span id="systemStatus" class="online">ONLINE</span>
 </div>
 
-<div class="status">
+<div class="connection">
 DATA CONNECTION: ALPHA VANTAGE API
 </div>
 
@@ -145,47 +231,35 @@ DATA CONNECTION: ALPHA VANTAGE API
 
 <h2>01 / WATCHLIST</h2>
 
-<div class="grid">
+<div class="controls">
 
 <input
-id="symbol"
-placeholder="Örn: AAPL, TSLA, MSFT"
-value="AAPL"
+id="symbolInput"
+type="text"
+placeholder="Örn: AAPL, NVDA, TSLA"
+maxlength="10"
 >
 
-<button onclick="addStock()">
+<button class="add" onclick="addStock()">
 HİSSE EKLE
 </button>
 
-</div>
-
-<button
-style="margin-top:15px"
-onclick="getStock()"
->
+<button onclick="searchStock()">
 ŞİMDİ TARA
 </button>
 
-<div id="loading"></div>
+<button class="refresh" onclick="refreshAll()">
+TÜMÜNÜ YENİLE
+</button>
 
-<div class="card">
-
-<h2 id="company">
-AAPL
-</h2>
-
-<div class="price" id="price">
-VERİ BEKLİYOR
 </div>
 
-<div id="change">
---
-</div>
+<div class="message" id="message"></div>
 
-<div id="update">
-Son güncelleme: --
-</div>
+<div class="watchlist" id="watchlist"></div>
 
+<div class="info">
+Not: Alpha Vantage ücretsiz API kullanımında istek sınırı bulunabilir.
 </div>
 
 </section>
@@ -195,325 +269,534 @@ Son güncelleme: --
 
 <h2>02 / SETTINGS</h2>
 
-<label>
-Yenileme:
-</label>
+<div class="controls">
 
-<select id="refreshTime">
-<option value="30">30 sn</option>
-<option value="60">1 dakika</option>
-<option value="300">5 dakika</option>
-</select>
-
-<button onclick="startAutoRefresh()">
-OTOMATİK YENİLE
+<button onclick="setIntervalTime(30000)">
+YENİLEME: 30 SN
 </button>
 
+<button onclick="setIntervalTime(60000)">
+YENİLEME: 60 SN
+</button>
+
+<button onclick="clearWatchlist()">
+WATCHLIST TEMİZLE
+</button>
+
+</div>
+
+<p class="info" id="refreshInfo">
+Otomatik yenileme: 30 saniye
+</p>
+
 </section>
 
 
-<section>
+<footer>
 
-<h2>03 / MARKET OVERVIEW</h2>
+⚠ Bu bir yatırım tavsiyesi değildir. Veriler gecikmeli veya hatalı olabilir.
 
-<div class="card">
-
-<h2>SEÇİLİ HİSSE</h2>
-
-<div id="overview">
-Henüz veri alınmadı.
-</div>
-
-</div>
-
-</section>
-
-
-<div class="warning">
-
-⚠ Bu bir yatırım tavsiyesi değildir.
-Veriler gecikmeli veya hatalı olabilir.
-
-</div>
+</footer>
 
 </main>
 
 
 <script>
 
-/* API ANAHTARINI BURAYA YAZ */
+/* =========================================
+   API ANAHTARINI BURAYA YAZ
+========================================= */
 
 const API_KEY = "3VIL9XWUF2MF53NO";
 
 
-let currentSymbol = "AAPL";
+/* =========================================
+   WATCHLIST
+========================================= */
 
-let refreshInterval = null;
+let watchlist =
+JSON.parse(localStorage.getItem("marketWatchlist"))
+|| ["AAPL"];
+
+let refreshTime = 30000;
+
+let refreshTimer;
 
 
-/* HİSSE EKLE */
+/* =========================================
+   BAŞLANGIÇ
+========================================= */
+
+renderWatchlist();
+
+startAutoRefresh();
+
+refreshAll();
+
+
+/* =========================================
+   HİSSE EKLE
+========================================= */
 
 function addStock(){
 
-const input =
-document
-.getElementById("symbol")
-.value
-.trim()
-.toUpperCase();
+  const input =
+  document.getElementById("symbolInput");
 
-if(!input){
+  const symbol =
+  input.value.trim().toUpperCase();
 
-alert("Lütfen hisse sembolü gir.");
+  if(!symbol){
+    showMessage("Lütfen bir hisse kodu yaz.");
+    return;
+  }
 
-return;
+  if(watchlist.includes(symbol)){
+    showMessage(symbol + " zaten Watchlist'te.");
+    return;
+  }
 
-}
+  watchlist.push(symbol);
 
-currentSymbol = input;
+  saveWatchlist();
 
-document
-.getElementById("company")
-.innerText = currentSymbol;
+  input.value = "";
 
-getStock();
+  renderWatchlist();
 
-}
+  fetchStock(symbol);
 
-
-/* VERİ ÇEK */
-
-async function getStock(){
-
-if(API_KEY === "BURAYA_API_KEY"){
-
-alert(
-"Önce API anahtarını koda eklemelisin."
-);
-
-return;
-
-}
-
-document
-.getElementById("loading")
-.innerText =
-"Veriler yükleniyor...";
-
-
-document
-.getElementById("status")
-.innerText =
-"SYSTEM STATUS: SCANNING";
-
-
-try{
-
-const url =
-"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="
-+
-currentSymbol
-+
-"&apikey="
-+
-API_KEY;
-
-
-const response =
-await fetch(url);
-
-
-const data =
-await response.json();
-
-
-console.log(data);
-
-
-const quote =
-data["Global Quote"];
-
-
-if(
-!quote ||
-Object.keys(quote).length === 0
-){
-
-throw new Error(
-"Veri bulunamadı"
-);
+  showMessage(symbol + " Watchlist'e eklendi.");
 
 }
 
 
-const price =
-quote["05. price"];
+/* =========================================
+   TEK HİSSE TARAMA
+========================================= */
 
+function searchStock(){
 
-const change =
-quote["09. change"];
+  const input =
+  document.getElementById("symbolInput");
 
+  const symbol =
+  input.value.trim().toUpperCase();
 
-const changePercent =
-quote["10. change percent"];
+  if(!symbol){
+    showMessage("Lütfen bir hisse kodu yaz.");
+    return;
+  }
 
+  if(!watchlist.includes(symbol)){
 
-document
-.getElementById("price")
-.innerText =
-"$" +
-Number(price).toFixed(2);
+    watchlist.push(symbol);
 
+    saveWatchlist();
 
-const changeElement =
-document
-.getElementById("change");
+    renderWatchlist();
 
+  }
 
-changeElement.innerText =
-change
-+
-" ("
-+
-changePercent
-+
-")";
-
-
-if(
-Number(change) >= 0
-){
-
-changeElement.className =
-"green";
-
-}
-
-else{
-
-changeElement.className =
-"red";
+  fetchStock(symbol);
 
 }
 
 
-document
-.getElementById("update")
-.innerText =
-"Son güncelleme: "
-+
-new Date().toLocaleString("tr-TR");
+/* =========================================
+   WATCHLIST ÇİZ
+========================================= */
 
+function renderWatchlist(){
 
-document
-.getElementById("overview")
-.innerHTML =
-"<h2>"
-+
-currentSymbol
-+
-"</h2>"
-+
-"<p>Fiyat: $"
-+
-Number(price).toFixed(2)
-+
-"</p>"
-+
-"<p>Değişim: "
-+
-changePercent
-+
-"</p>";
+  const container =
+  document.getElementById("watchlist");
 
+  if(watchlist.length === 0){
 
-document
-.getElementById("status")
-.innerText =
-"SYSTEM STATUS: ONLINE";
+    container.innerHTML =
+    '<div class="empty">Henüz Watchlist\'te hisse yok.</div>';
 
+    return;
 
-document
-.getElementById("loading")
-.innerText =
-"";
+  }
 
+  container.innerHTML = "";
+
+  watchlist.forEach(symbol => {
+
+    const card =
+    document.createElement("div");
+
+    card.className = "card";
+
+    card.id = "card-" + symbol;
+
+    card.innerHTML = `
+
+      <div class="symbol">
+        ${symbol}
+      </div>
+
+      <div
+        class="price neutral"
+        id="price-${symbol}"
+      >
+        VERİ BEKLENİYOR
+      </div>
+
+      <div
+        id="change-${symbol}"
+        class="neutral"
+      >
+        --
+      </div>
+
+      <div
+        class="updated"
+        id="updated-${symbol}"
+      >
+        Güncelleme bekleniyor
+      </div>
+
+      <button
+        class="delete"
+        onclick="removeStock('${symbol}')"
+      >
+        WATCHLIST'TEN SİL
+      </button>
+
+    `;
+
+    container.appendChild(card);
+
+  });
 
 }
 
-catch(error){
 
-console.error(error);
+/* =========================================
+   API'DEN HİSSE VERİSİ ÇEK
+========================================= */
+
+async function fetchStock(symbol){
+
+  const priceElement =
+  document.getElementById("price-" + symbol);
+
+  const changeElement =
+  document.getElementById("change-" + symbol);
+
+  const updatedElement =
+  document.getElementById("updated-" + symbol);
+
+  if(!priceElement) return;
+
+  priceElement.innerHTML =
+  "YÜKLENİYOR...";
+
+  try{
+
+    const url =
+    `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
+
+    const response =
+    await fetch(url);
+
+    const data =
+    await response.json();
+
+    if(data["Note"]){
+
+      priceElement.innerHTML =
+      "API SINIRI";
+
+      changeElement.innerHTML =
+      "Biraz sonra tekrar deneyin.";
+
+      return;
+
+    }
+
+    if(data["Error Message"]){
+
+      priceElement.innerHTML =
+      "HİSSE BULUNAMADI";
+
+      changeElement.innerHTML =
+      "--";
+
+      return;
+
+    }
+
+    const quote =
+    data["Global Quote"];
+
+    if(!quote ||
+       !quote["05. price"]){
+
+      priceElement.innerHTML =
+      "VERİ YOK";
+
+      changeElement.innerHTML =
+      "--";
+
+      return;
+
+    }
+
+    const price =
+    parseFloat(
+      quote["05. price"]
+    );
+
+    const change =
+    parseFloat(
+      quote["09. change"]
+    );
+
+    const changePercent =
+    quote["10. change percent"];
+
+    priceElement.innerHTML =
+    "$" +
+    price.toLocaleString(
+      "en-US",
+      {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+      }
+    );
 
 
-document
-.getElementById("status")
-.innerText =
-"SYSTEM STATUS: ERROR";
+    if(change > 0){
+
+      changeElement.className =
+      "positive";
+
+      changeElement.innerHTML =
+      "▲ +" +
+      change.toFixed(2) +
+      " (" +
+      changePercent +
+      ")";
+
+    }
+
+    else if(change < 0){
+
+      changeElement.className =
+      "negative";
+
+      changeElement.innerHTML =
+      "▼ " +
+      change.toFixed(2) +
+      " (" +
+      changePercent +
+      ")";
+
+    }
+
+    else{
+
+      changeElement.className =
+      "neutral";
+
+      changeElement.innerHTML =
+      "◆ 0.00";
+
+    }
 
 
-document
-.getElementById("loading")
-.innerText =
-"Veri alınamadı. Hisse sembolünü veya API bağlantısını kontrol et.";
+    updatedElement.innerHTML =
+    "Son güncelleme: " +
+    new Date().toLocaleString("tr-TR");
+
+
+  }
+
+  catch(error){
+
+    console.error(error);
+
+    priceElement.innerHTML =
+    "BAĞLANTI HATASI";
+
+    changeElement.innerHTML =
+    "Tekrar deneyin.";
+
+  }
 
 }
 
+
+/* =========================================
+   TÜM HİSSELERİ YENİLE
+========================================= */
+
+async function refreshAll(){
+
+  showMessage(
+    "Watchlist güncelleniyor..."
+  );
+
+  for(let i = 0;
+      i < watchlist.length;
+      i++){
+
+    await fetchStock(
+      watchlist[i]
+    );
+
+    /* API'yi çok hızlı çağırmamak için */
+
+    if(i <
+       watchlist.length - 1){
+
+      await new Promise(
+        resolve =>
+        setTimeout(resolve, 1500)
+      );
+
+    }
+
+  }
+
+  showMessage(
+    "Watchlist güncellendi."
+  );
+
 }
 
 
-/* OTOMATİK YENİLEME */
+/* =========================================
+   HİSSE SİL
+========================================= */
+
+function removeStock(symbol){
+
+  watchlist =
+  watchlist.filter(
+    stock => stock !== symbol
+  );
+
+  saveWatchlist();
+
+  renderWatchlist();
+
+  showMessage(
+    symbol +
+    " Watchlist'ten silindi."
+  );
+
+}
+
+
+/* =========================================
+   WATCHLIST TEMİZLE
+========================================= */
+
+function clearWatchlist(){
+
+  const confirmation =
+  confirm(
+    "Tüm hisseleri silmek istediğine emin misin?"
+  );
+
+  if(!confirmation) return;
+
+  watchlist = [];
+
+  saveWatchlist();
+
+  renderWatchlist();
+
+  showMessage(
+    "Watchlist temizlendi."
+  );
+
+}
+
+
+/* =========================================
+   LOCAL STORAGE
+========================================= */
+
+function saveWatchlist(){
+
+  localStorage.setItem(
+    "marketWatchlist",
+    JSON.stringify(watchlist)
+  );
+
+}
+
+
+/* =========================================
+   MESAJ
+========================================= */
+
+function showMessage(text){
+
+  document.getElementById(
+    "message"
+  ).innerHTML = text;
+
+}
+
+
+/* =========================================
+   OTOMATİK YENİLEME
+========================================= */
+
+function setIntervalTime(time){
+
+  refreshTime = time;
+
+  document.getElementById(
+    "refreshInfo"
+  ).innerHTML =
+  "Otomatik yenileme: " +
+  (time / 1000) +
+  " saniye";
+
+  startAutoRefresh();
+
+}
+
 
 function startAutoRefresh(){
 
-if(refreshInterval){
+  clearInterval(refreshTimer);
 
-clearInterval(
-refreshInterval
-);
+  refreshTimer =
+  setInterval(
+    refreshAll,
+    refreshTime
+  );
 
 }
 
 
-const seconds =
-Number(
+/* =========================================
+   ENTER TUŞU
+========================================= */
+
 document
-.getElementById("refreshTime")
-.value
+.getElementById("symbolInput")
+.addEventListener(
+  "keydown",
+  function(event){
+
+    if(event.key === "Enter"){
+
+      addStock();
+
+    }
+
+  }
 );
-
-
-refreshInterval =
-setInterval(
-
-getStock,
-
-seconds * 1000
-
-);
-
-
-alert(
-
-"Her "
-+
-seconds
-+
-" saniyede otomatik yenileme başlatıldı."
-
-);
-
-}
-
-
-/* SAYFA AÇILINCA */
-
-window.onload =
-function(){
-
-getStock();
-
-};
 
 </script>
 
