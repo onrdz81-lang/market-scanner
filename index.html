@@ -495,6 +495,8 @@ async function fetchStock(symbol){
   priceElement.innerHTML =
   "YÜKLENİYOR...";
 
+  changeElement.innerHTML = "";
+
   try{
 
     const url =
@@ -506,17 +508,40 @@ async function fetchStock(symbol){
     const data =
     await response.json();
 
+    console.log("API CEVABI:", data);
+
+
+    /* API SINIRI */
+
     if(data["Note"]){
 
       priceElement.innerHTML =
       "API SINIRI";
 
       changeElement.innerHTML =
-      "Biraz sonra tekrar deneyin.";
+      data["Note"];
 
       return;
 
     }
+
+
+    /* API BİLGİ MESAJI */
+
+    if(data["Information"]){
+
+      priceElement.innerHTML =
+      "API MESAJI";
+
+      changeElement.innerHTML =
+      data["Information"];
+
+      return;
+
+    }
+
+
+    /* HATALI HİSSE KODU */
 
     if(data["Error Message"]){
 
@@ -524,14 +549,18 @@ async function fetchStock(symbol){
       "HİSSE BULUNAMADI";
 
       changeElement.innerHTML =
-      "--";
+      data["Error Message"];
 
       return;
 
     }
 
+
+    /* HİSSE VERİSİ */
+
     const quote =
     data["Global Quote"];
+
 
     if(!quote ||
        !quote["05. price"]){
@@ -540,11 +569,12 @@ async function fetchStock(symbol){
       "VERİ YOK";
 
       changeElement.innerHTML =
-      "--";
+      "API cevap verdi ancak fiyat verisi bulunamadı.";
 
       return;
 
     }
+
 
     const price =
     parseFloat(
@@ -559,6 +589,9 @@ async function fetchStock(symbol){
     const changePercent =
     quote["10. change percent"];
 
+
+    /* FİYAT */
+
     priceElement.innerHTML =
     "$" +
     price.toLocaleString(
@@ -569,6 +602,8 @@ async function fetchStock(symbol){
       }
     );
 
+
+    /* DEĞİŞİM */
 
     if(change > 0){
 
@@ -609,10 +644,11 @@ async function fetchStock(symbol){
     }
 
 
+    /* GÜNCELLEME ZAMANI */
+
     updatedElement.innerHTML =
     "Son güncelleme: " +
     new Date().toLocaleString("tr-TR");
-
 
   }
 
@@ -624,52 +660,11 @@ async function fetchStock(symbol){
     "BAĞLANTI HATASI";
 
     changeElement.innerHTML =
-    "Tekrar deneyin.";
+    error.message;
 
   }
 
 }
-
-
-/* =========================================
-   TÜM HİSSELERİ YENİLE
-========================================= */
-
-async function refreshAll(){
-
-  showMessage(
-    "Watchlist güncelleniyor..."
-  );
-
-  for(let i = 0;
-      i < watchlist.length;
-      i++){
-
-    await fetchStock(
-      watchlist[i]
-    );
-
-    /* API'yi çok hızlı çağırmamak için */
-
-    if(i <
-       watchlist.length - 1){
-
-      await new Promise(
-        resolve =>
-        setTimeout(resolve, 1500)
-      );
-
-    }
-
-  }
-
-  showMessage(
-    "Watchlist güncellendi."
-  );
-
-}
-
-
 /* =========================================
    HİSSE SİL
 ========================================= */
